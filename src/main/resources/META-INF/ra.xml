@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/connector_1_6.xsd" id="Connector_ID" version="1.6">
+  <description>Adaptador ICAP</description>
+  <display-name>sample-jca</display-name>
+  <vendor-name>Claudiney</vendor-name>
+  <eis-type>Model</eis-type>
+  <resourceadapter-version>1.0.0</resourceadapter-version>
+  <resourceadapter/>
+</connector>
