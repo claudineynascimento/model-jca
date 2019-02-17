@@ -39,6 +39,7 @@ public class ModelWork implements IModelWork {
 	
 	public ModelWork(Map<String, Serializable> requestData) {
 		logger.info(">>> "+uuid+" constructor initialisation <<< ");
+		logger.info(requestData.toString());
 		this.requestData.putAll(requestData);
 	}
 	
@@ -84,16 +85,15 @@ public class ModelWork implements IModelWork {
 		loadData();
 		synchronized(this) {
 			this.isJobCompleted = true;
-			this.notifyAll();
 		}
 	}
 
 	@Override
 	public void release() {
 		logger.info("<<< "+uuid+" | releasing >>>");
-		isJobCompleted = false;
-		requestData.clear();
-		responseData.clear();
+//		isJobCompleted = false;
+//		requestData.clear();
+//		responseData.clear();
 	}
 	
 	@Override
@@ -120,8 +120,10 @@ public class ModelWork implements IModelWork {
 			return;
 		}
 		
-		responseData.clear();
-		responseData.put("resourceData", cache.toByteArray());
+		synchronized(this) {
+			responseData.clear();
+			responseData.put("resourceData", cache.toByteArray());
+		}
 		
 	}
 

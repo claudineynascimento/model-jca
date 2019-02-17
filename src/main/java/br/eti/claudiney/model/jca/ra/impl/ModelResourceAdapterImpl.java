@@ -2,6 +2,8 @@ package br.eti.claudiney.model.jca.ra.impl;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
@@ -13,8 +15,10 @@ import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.TransactionSupport.TransactionSupportLevel;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.ExecutionContext;
+import javax.resource.spi.work.Work;
 import javax.resource.spi.work.WorkEvent;
 import javax.resource.spi.work.WorkException;
+import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
 
 import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
@@ -64,11 +68,11 @@ public class ModelResourceAdapterImpl implements IModelResourceAdapter {
 		return null;
 	}
 
-	private BootstrapContext context;
+	private WorkManager workManager;
 	@Override
 	public void start(BootstrapContext context) throws ResourceAdapterInternalException {
 		logger.info("start(BootstrapContext) (can be used to start a Work)");
-		this.context = context;
+		this.workManager = context.getWorkManager();
 	}
 	
 	//--------------------------------------------------------
@@ -82,21 +86,24 @@ public class ModelResourceAdapterImpl implements IModelResourceAdapter {
 		IModelWork work = new ModelWork(requestData);
 		
 		try {
-			context.getWorkManager().scheduleWork(work, 0, new ExecutionContext(), this);
+			workManager.scheduleWork(work, 50, new ExecutionContext(), this);
 			synchronized(work) {
 				if(!work.jobCompleted()) {
 					logger.info("invokeService(): ### WAITING ###");
 					work.wait(5000);
 				}
+				if( ! work.jobCompleted() ) {
+					throw new ModelResourceException("Work Timeout");
+				}
 			}
 		} catch(WorkException | InterruptedException e) {
-			logger.severe(e);
+			throw new ModelResourceException(e);
 		}
 		
 		logger.info("invokeService(): ### COMPLETED ###");
 		
-		if( ! work.jobCompleted() ) {
-			throw new ModelResourceException("Work Timeout");
+		if( work.getFailure()!= null ) {
+			throw new ModelResourceException(work.getFailure());
 		}
 		
 		return work.getData();
@@ -118,11 +125,17 @@ public class ModelResourceAdapterImpl implements IModelResourceAdapter {
 	@Override
 	public void workCompleted(WorkEvent event) {
 		logger.info("workCompleted(WorkEvent)");
+		Work work = event.getWork();
+		synchronized(work) {
+			work.notifyAll();
+			logger.info("workCompleted(): all threads notified");
+		}
 	}
 
 	@Override
 	public void workRejected(WorkEvent event) {
 		logger.info("workRejected(WorkEvent)");
+		Logger.getGlobal().log(Level.SEVERE, "Work Rejected", event.getException());
 	}
 
 	@Override

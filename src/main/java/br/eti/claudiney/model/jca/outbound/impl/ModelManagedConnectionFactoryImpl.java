@@ -98,6 +98,8 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 		IModelManagedConnection managed = new ModelManagedConnectionImpl(
 				this, subject, (ModelConnectionRequestInfo)info);
 		
+		managed.setResourceAdapter(resourceAdapter);
+		
 		managedConnectionPool.add(managed);
 		
 		return managed;
