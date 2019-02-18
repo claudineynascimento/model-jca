@@ -1,9 +1,7 @@
 package br.eti.claudiney.model.jca.work.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.File;
 import java.io.Serializable;
-import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,11 +10,12 @@ import java.util.UUID;
 import javax.resource.ResourceException;
 import javax.resource.spi.ResourceAdapter;
 
-import org.apache.commons.io.IOUtils;
-
-import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
+import br.eti.claudiney.icap.client.ICAPClient;
+import br.eti.claudiney.icap.client.ICAPException;
+import br.eti.claudiney.icap.client.ICAPResponse;
 import br.eti.claudiney.model.jca.internal.def.ILogger;
 import br.eti.claudiney.model.jca.internal.factory.ModelLogger;
+import br.eti.claudiney.model.jca.outbound.beans.ModelServiceRequest;
 import br.eti.claudiney.model.jca.outbound.def.IModelWork;
 
 public class ModelWork implements IModelWork {
@@ -27,9 +26,6 @@ public class ModelWork implements IModelWork {
 	
 	private ResourceAdapter resourceAdapter;
 	
-	private Map<String, Serializable> requestData = 
-			new LinkedHashMap<>();
-	
 	private Map<String, Serializable> responseData =
 			new LinkedHashMap<>();
 	
@@ -37,23 +33,21 @@ public class ModelWork implements IModelWork {
 		
 	}
 	
-	public ModelWork(Map<String, Serializable> requestData) {
-		logger.info(">>> "+uuid+" constructor initialisation <<< ");
-		logger.info(requestData.toString());
-		this.requestData.putAll(requestData);
+	private ModelServiceRequest request;
+	
+	public ModelWork(ModelServiceRequest request) {
+		this.request = request;
 	}
 	
 	@Override
 	// From ResourceAdapterAssociation
 	public void setResourceAdapter(ResourceAdapter resourceAdapter) throws ResourceException {
-		logger.info("setResourceAdapter(ResourceAdapter)");
 		this.resourceAdapter = resourceAdapter;
 	}
 	
 	@Override
 	// From ResourceAdapterAssociation
 	public ResourceAdapter getResourceAdapter() {
-		logger.info("getResourceAdapter()");
 		return this.resourceAdapter;
 	}
 	
@@ -103,26 +97,23 @@ public class ModelWork implements IModelWork {
 	
 	private void loadData() {
 		
-		URL url = null;
+		ICAPClient client = new ICAPClient(
+				request.getServiceHost(), request.getServicePort());
+		
+		File file = new File("c:\\temp\\eicar.com.txt");
+		
+		ICAPResponse response = null;
 		try {
-			url = new URL( (String) requestData.get("url") );
-		} catch(Exception e) {
-			failure = new ModelResourceException("Requested Resource Unavailable (001)");
-			return;
-		}
-		
-		ByteArrayOutputStream cache = new ByteArrayOutputStream();
-		
-		try {
-			IOUtils.copy(url.openStream(), cache);
-		} catch(IOException e) {
-			failure = new ModelResourceException("Requested Resource Unavailable (002)");
-			return;
-		}
-		
-		synchronized(this) {
+			response = client.virus_scan(file);
+//			response = client.info();
 			responseData.clear();
-			responseData.put("resourceData", cache.toByteArray());
+			if( response.getBody() != null ) {
+				responseData.put("content", response.getBody());
+			} else {
+				responseData.put("content", "<EMPTY>".getBytes());
+			}
+		} catch(ICAPException e) {
+			failure = e;
 		}
 		
 	}

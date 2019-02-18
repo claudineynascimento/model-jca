@@ -12,4 +12,8 @@ ValidatingManagedConnectionFactory {
 	
 	void onManagedConnectionDestroyed(IModelManagedConnection managedConnection);
 	
+	String getServiceHost();
+	
+	Integer getServicePort();
+	
 }

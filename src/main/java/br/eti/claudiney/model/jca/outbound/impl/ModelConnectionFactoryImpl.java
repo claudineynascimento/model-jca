@@ -1,6 +1,6 @@
 package br.eti.claudiney.model.jca.outbound.impl;
 
-import java.util.logging.Logger;
+import java.util.Set;
 
 import javax.naming.NamingException;
 import javax.naming.Reference;
@@ -11,6 +11,7 @@ import javax.resource.spi.ConnectionManager;
 
 import br.eti.claudiney.model.api.ra.def.IModelResourceAdapterMetaData;
 import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
+import br.eti.claudiney.model.api.ra.outbound.beans.ModelConnectionSpec;
 import br.eti.claudiney.model.api.ra.outbound.def.IModelConnection;
 import br.eti.claudiney.model.api.ra.outbound.def.IModelConnectionFactory;
 import br.eti.claudiney.model.jca.internal.def.ILogger;
@@ -24,40 +25,32 @@ public class ModelConnectionFactoryImpl implements IModelConnectionFactory {
 	
 	private IModelManagedConnectionFactory managedConnectionFactory;
 	private ConnectionManager connectionManager;
-	private ModelConnectionRequestInfo connectionRequestInfo; 
 	
 	public ModelConnectionFactoryImpl() {
-		Logger.getGlobal().info("_constructor_()");
 	}
 	
 	public ModelConnectionFactoryImpl(
 			IModelManagedConnectionFactory managedConnectionFactory,
-			ConnectionManager connectionManager,
-			ModelConnectionRequestInfo connectionRequestInfo) {
-		
-		logger.info("_constructor_(ManagedConnectionFactory, ConnectionManager, ConnectionRequestInfo)");
+			ConnectionManager connectionManager) {
 		
 		this.managedConnectionFactory = managedConnectionFactory;
 		this.connectionManager = connectionManager;
-		this.connectionRequestInfo = connectionRequestInfo;
 		
 	}
 	
 	@Override
 	public IModelConnection getConnection() throws ModelResourceException {
 		
-		logger.info("getConnection()");
-		
 		IModelConnection connection = null;
 		
-		logger.info("getConnection()\n>>> delegate <<< ConnectionManager.allocateConnection(ManagedConnectionFactory, ConnectionRequestInfo)");
+		/* It all starts here */
+		ModelConnectionRequestInfo info = new ModelConnectionRequestInfo();
+		
 		try {
 			
 			connection = (IModelConnection) connectionManager.allocateConnection(
 				managedConnectionFactory,
-				connectionRequestInfo);
-			
-			logger.info("getConnection()\n>>> Connection Allocated >>> "+connection.toString());
+				info);
 			
 		} catch(ResourceException e) {
 			throw new ModelResourceException(e);
@@ -69,20 +62,51 @@ public class ModelConnectionFactoryImpl implements IModelConnectionFactory {
 
 	@Override
 	public IModelConnection getConnection(ConnectionSpec spec) throws ModelResourceException {
-		logger.info("getConnection(ConnectionSpec)");
-		throw new ModelResourceException("Not supported");
+		
+		if( spec == null ) {
+			throw new ModelResourceException("<spec> argument cannot be null");
+		}
+		
+		if( ! (spec instanceof ModelConnectionSpec) ) {
+			throw new ModelResourceException("<spec> argument must be an instance of class <" + ModelConnectionSpec.class.getCanonicalName() +">");
+		}
+		
+		
+		IModelConnection connection = null;
+		
+		ModelConnectionSpec modelSpec = (ModelConnectionSpec)spec;
+		
+		/* It all starts also here */
+		ModelConnectionRequestInfo info = new ModelConnectionRequestInfo();
+		
+		Set<String> specAttrs = modelSpec.attributes();
+		
+		for( String attribute: specAttrs ) {
+			info.setAttribute(attribute, modelSpec.getAttribute(attribute));
+		}
+		
+		try {
+			
+			connection = (IModelConnection) connectionManager.allocateConnection(
+				managedConnectionFactory,
+				info);
+			
+		} catch(ResourceException e) {
+			throw new ModelResourceException(e);
+		}
+		
+		return connection;
+		
 	}
 
 	@Override
 	public IModelResourceAdapterMetaData getMetaData() throws ModelResourceException {
-		logger.info("getMetaData()");
 		throw new ModelResourceException("Unavailable");
 //		return null;
 	}
 
 	@Override
 	public RecordFactory getRecordFactory() throws ResourceException {
-		logger.info("getRecordFactory()");
 		throw new ModelResourceException("Not supported");
 //		return null;
 	}
@@ -97,7 +121,6 @@ public class ModelConnectionFactoryImpl implements IModelConnectionFactory {
 
 	@Override
 	public Reference getReference() throws NamingException {
-		logger.info("getReference()");
 		return this.reference;
 	}
 

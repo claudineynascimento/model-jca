@@ -20,6 +20,7 @@ import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
 import br.eti.claudiney.model.api.ra.outbound.def.IModelConnection;
 import br.eti.claudiney.model.jca.internal.def.ILogger;
 import br.eti.claudiney.model.jca.internal.factory.ModelLogger;
+import br.eti.claudiney.model.jca.outbound.beans.ModelServiceRequest;
 import br.eti.claudiney.model.jca.outbound.def.IModelLocalTransactionSPI;
 import br.eti.claudiney.model.jca.outbound.def.IModelManagedConnection;
 import br.eti.claudiney.model.jca.outbound.def.IModelManagedConnectionAssociation;
@@ -41,15 +42,11 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 	private UUID uuid = UUID.randomUUID();
 	
 	public ModelManagedConnectionImpl() {
-		logger.info("<<<"+uuid+">>> _constructor_()");
 	}
 	
 	public ModelManagedConnectionImpl(
 			IModelManagedConnectionFactory factory,
-			Subject subject,
-			ModelConnectionRequestInfo info) throws ResourceException {
-		
-		logger.info("<<<"+uuid+">>> _constructor_(ManagedConnectionFactory, Subject, ConnectionRequestInfo)");
+			Subject subject) throws ResourceException {
 		
 		this.factory = factory;
 		
@@ -80,7 +77,6 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 
 	@Override
 	public void addConnectionEventListener(ConnectionEventListener listener) {
-		logger.info("<<<"+uuid+">>> addConnectionEventListener(ConnectionEventListener)");
 		listeners.add(listener);
 	}
 
@@ -100,8 +96,6 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 	 */
 	@Override
 	public void associateConnection(Object connection) throws ResourceException {
-		
-		logger.info("<<<"+uuid+">>> associateConnection("+connection.getClass().getCanonicalName()+")");
 		
 		IModelConnection mConn = (IModelConnection) connection;
 		
@@ -142,7 +136,6 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 	 */
 	@Override
 	public void destroy() throws ResourceException {
-		logger.info("<<<"+uuid+">>> destroy()");
 		factory.onManagedConnectionDestroyed(this);
 	}
 
@@ -152,10 +145,11 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 			Subject subject, 
 			ConnectionRequestInfo info) throws ResourceException {
 		
-		logger.info("<<<"+uuid+">>> getConnection(Subject, ConnectionRequestInfo)");
+		/* Validate <Subject> if necessary */
 		
-		IModelConnection connection = new ModelConnectionImpl(
-				this, subject, (ModelConnectionRequestInfo) info);
+		/* Validate <ConnectionRequestInfo> if necessary */
+		
+		IModelConnection connection = new ModelConnectionImpl(this);
 		
 		connectionPool.add(connection);
 		
@@ -165,28 +159,24 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 
 	@Override
 	public IModelLocalTransactionSPI getLocalTransaction() throws ResourceException {
-		logger.info("<<<"+uuid+">>> getLocalTransaction()");
 		throw new ModelResourceException("Not Supported"); 
 //		return new ModelLocalTransactionSPI();
 	}
 
 	@Override
 	public ManagedConnectionMetaData getMetaData() throws ResourceException {
-		logger.info("<<<"+uuid+">>> getMetaData()");
 		throw new ModelResourceException("Not Supported");
 //		return null;
 	}
 
 	@Override
 	public XAResource getXAResource() throws ResourceException {
-		logger.info("<<<"+uuid+">>> getXAResource()");
 		throw new ModelResourceException("Not Supported");
 //		return null;
 	}
 
 	@Override
 	public void removeConnectionEventListener(ConnectionEventListener listener) {
-		logger.info("<<<"+uuid+">>> removeConnectionEventListener(ConnectionEventListener)");
 		listeners.remove(listener);
 	}
 
@@ -194,13 +184,11 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 	
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
-		logger.info("<<<"+uuid+">>> getLogWriter()");
 		return log;
 	}
 
 	@Override
 	public void setLogWriter(PrintWriter writer) throws ResourceException {
-		logger.info("<<<"+uuid+">>> setLogWriter(PrintWriter)");
 		log = writer;
 	}
 	
@@ -243,13 +231,11 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 	 */
 	@Override
 	public void removeConnection(IModelConnection connection) {
-		logger.info("<<<"+uuid+">>> removeConnection(IModelConnection)");
 		connectionPool.remove(connection);
 	}
 	
 	@Override
 	public void onConnectionClosed(IModelConnection connection) {
-		logger.info("<<<"+uuid+">>> onConnectionClosed(IModelConnection)");
 		removeConnection(connection);
 		registerEvent(ConnectionEvent.CONNECTION_CLOSED, connection);
 	}
@@ -269,14 +255,19 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 	@Override
 	public Map<String, Serializable> delegateExecution(
 			Map<String, Serializable> data) throws ModelResourceException {
-		logger.info("<<<"+uuid+">>> delegateExecution()");
-		return resourceAdapter.invokeService(data);
+		
+		ModelServiceRequest request = new ModelServiceRequest();
+		
+		request.setRequestData(data);
+		request.setServiceHost(factory.getServiceHost());
+		request.setServicePort(factory.getServicePort());
+		
+		return resourceAdapter.invokeService(request);
+		
 	}
 
 	@Override
 	public int hashCode() {
-		
-		logger.info("<<<"+uuid+">>> hashCode(Object)");
 		
 		final int prime = 31;
 		int result = 1;
@@ -288,8 +279,6 @@ public class ModelManagedConnectionImpl implements IModelManagedConnection {
 
 	@Override
 	public boolean equals(Object obj) {
-		
-		logger.info("<<<"+uuid+">>> equals(Object)");
 		
 		if (this == obj)
 			return true;

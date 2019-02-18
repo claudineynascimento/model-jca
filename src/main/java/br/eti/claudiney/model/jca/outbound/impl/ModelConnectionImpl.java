@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.security.auth.Subject;
-
 import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
 import br.eti.claudiney.model.api.ra.outbound.def.IModelConnectionMetaData;
 import br.eti.claudiney.model.api.ra.outbound.def.IModelLocalTransaction;
@@ -25,8 +23,6 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 	
 	private IModelManagedConnection managedConnection;
 	
-	private ModelConnectionRequestInfo connectionRequestInfo;
-	
 	private UUID uuid = UUID.randomUUID();
 	
 	private boolean valid;
@@ -36,15 +32,9 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 	}
 	
 	public ModelConnectionImpl(
-			IModelManagedConnection managedConnection,
-			Subject subject, 
-			ModelConnectionRequestInfo info) {
-		
-		logger.info("_constructor_(Subject, ConnectionRequestInfo)");
+			IModelManagedConnection managedConnection) {
 		
 		this.managedConnection = managedConnection;
-		
-		this.connectionRequestInfo = info;
 		
 		valid = true;
 		
@@ -58,7 +48,6 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 	
 	@Override
 	public void close() throws ModelResourceException {
-		logger.info("close()");
 		validate();
 		valid = false;
 		managedConnection.onConnectionClosed(this);
@@ -67,28 +56,24 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 
 	@Override
 	public IModelService createInteraction() throws ModelResourceException {
-		logger.info("createInteraction()");
 		validate();
 		return new ModelServiceEngine(this);
 	}
 	
 	@Override
 	public IModelService createService() throws ModelResourceException {
-		logger.info("createService()");
 		validate();
 		return new ModelServiceEngine(this);
 	}
 
 	@Override
 	public IModelLocalTransaction getLocalTransaction() throws ModelResourceException {
-		logger.info("getLocalTransaction()");
 		throw new ModelResourceException("Not Supported");
 //		return null;
 	}
 
 	@Override
 	public IModelConnectionMetaData getMetaData() throws ModelResourceException {
-		logger.info("getLocalTransaction()");
 		ModelConnectionMetaDataImpl data = new ModelConnectionMetaDataImpl();
 		data.setProductName("Model");
 		data.setProductVersion("1.0.0");
@@ -98,7 +83,6 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 
 	@Override
 	public IModelResultSetInfo getResultSetInfo() throws ModelResourceException {
-		logger.info("getResultSetInfo()");
 		throw new ModelResourceException("Not Supported");
 //		return null;
 	}
@@ -114,8 +98,6 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 	public void associateManagedConnection(IModelManagedConnection managedConnection)
 			throws ModelResourceException {
 		
-		logger.info("associateManagedConnection(IModelManagedConnection)");
-		
 		if( this.managedConnection != null ) {
 			throw new ModelConnectionAssociationException(
 					"Connection handler is already associated to another ManagedConnection instance"); 
@@ -125,17 +107,19 @@ implements IModelInternalConnection, IModelManagedConnectionAssociation {
 		
 	}
 	
-	private String managedConnectionSignature;
+//	private String managedConnectionSignature;
 	
 	@Override
 	public void setManagedConnectionFactorySignature(String signature) {
-		this.managedConnectionSignature = signature;
+//		this.managedConnectionSignature = signature;
 	}
 	
 	@Override
 	public Map<String, Serializable> delegateExecution(
 			Map<String, Serializable> data) throws ModelResourceException {
+		
 		return managedConnection.delegateExecution(data);
+		
 	}
 	
 	@Override

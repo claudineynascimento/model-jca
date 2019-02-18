@@ -53,13 +53,11 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 	
 	@Override
 	public void setResourceAdapter(ResourceAdapter resourceAdapter) throws ResourceException {
-		logger.info("setResourceAdapter(ResourceAdapter)");
 		this.resourceAdapter = (IModelResourceAdapter) resourceAdapter;
 	}
 	
 	@Override
 	public IModelResourceAdapter getResourceAdapter() {
-		logger.info("setResourceAdapter");
 		return this.resourceAdapter;
 	}
 	
@@ -73,30 +71,27 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 //	public Object createConnectionFactory(
 	public IModelConnectionFactory createConnectionFactory(
 			ConnectionManager manager) throws ResourceException {
-		
-		logger.info("createConnectionFactory(ConnectionManager) ");
-		
-		ModelConnectionRequestInfo info = new ModelConnectionRequestInfo();
-		
-		IModelConnectionFactory factory = new ModelConnectionFactoryImpl(this, manager, info);
+
+		IModelConnectionFactory factory = 
+				new ModelConnectionFactoryImpl(this, manager);
 		
 		connectionFactoryPool.add(factory);
 		
 		return factory;
 		
 	}
-
+	
 	@Override
 //	public ManagedConnection createManagedConnection(
 	public IModelManagedConnection createManagedConnection(
 			Subject subject,
 			ConnectionRequestInfo info)
 			throws ResourceException {
-		
-		logger.info("createManagedConnection(Subject, ConnectionRequestInfo)");
+
+		// Validate <ConnectionRequestInfo> if necessary
 		
 		IModelManagedConnection managed = new ModelManagedConnectionImpl(
-				this, subject, (ModelConnectionRequestInfo)info);
+				this, subject);
 		
 		managed.setResourceAdapter(resourceAdapter);
 		
@@ -114,19 +109,17 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 			ConnectionRequestInfo info)
 			throws ModelResourceException {
 		
-		logger.info("matchManagedConnections(Set<ManagedConnection>, Subject, ConnectionRequestInfo)");
-		
+		// Validate <Subject> if necessary
 //		if( subject == null ) {
 //			return null;
 //		}
 		
-		IModelManagedConnection c = null;
+		// Validate <ConnectionRequestInfo> if necessary
 		
-		StringBuilder pool = new StringBuilder();
+		IModelManagedConnection c = null;
 		
 		if( set != null ) {
 			for( Object mc: set ) {
-				pool.append("\n>>> "+mc);
 				if( managedConnectionPool.contains(mc) ) {
 					if( c == null ) {
 						c = (IModelManagedConnection) mc; 
@@ -134,14 +127,6 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 				}
 			}
 		}
-		
-		if( c != null ) {
-			pool.append("\n>>> Chosen: " + c);
-		} else {
-			pool.append("\n>>> NONE MATCHED!");
-		}
-		
-		logger.info("matchManagedConnections:\n>>> ManagedConnection Pool validation:" + pool);
 
 		return c;
 		
@@ -149,7 +134,6 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 	
 	@Override
 	public void onManagedConnectionDestroyed(IModelManagedConnection managedConnection) {
-		logger.info("onManagedConnectionDestroyed(IModelManagedConnection)");
 		managedConnectionPool.remove(managedConnection);
 	}
 	
@@ -157,8 +141,6 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 //	public Set getInvalidConnections(
 	public Set<IModelManagedConnection> getInvalidConnections(
 			Set managedConnectionPool) throws ModelResourceException {
-		
-		logger.info("getInvalidConnections(Set<ManagedConnection>)");
 		
 		Set<IModelManagedConnection> invalidConnectionPool = 
 				new LinkedHashSet<>();
@@ -169,8 +151,6 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 			}
 		}
 		
-		logger.info("INVALID >>> " + invalidConnectionPool.size());
-		
 		return invalidConnectionPool;
 		
 	}
@@ -179,13 +159,11 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 	
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
-		logger.info("getLogWriter()");
 		return log;
 	}
 
 	@Override
 	public void setLogWriter(PrintWriter writer) throws ResourceException {
-		logger.info("setLogWriter(PrintWriter)");
 		log = writer;
 	}
 
@@ -223,7 +201,6 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 	
 	@ConfigProperty(defaultValue = "localhost")
 	public void setServiceHost(String serviceHost) {
-		logger.info("PROPERTY: setServiceHost(String)");
 		this.serviceHost = serviceHost;
 	}
 	
@@ -233,7 +210,6 @@ public class ModelManagedConnectionFactoryImpl implements IModelManagedConnectio
 	
 	@ConfigProperty(defaultValue = "0")
 	public void setServicePort(Integer servicePort) {
-		logger.info("PROPERTY: setServicePort(Integer)");
 		this.servicePort = servicePort;
 	}
 	

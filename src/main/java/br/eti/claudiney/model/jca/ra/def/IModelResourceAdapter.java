@@ -7,6 +7,7 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.work.WorkListener;
 
 import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
+import br.eti.claudiney.model.jca.outbound.beans.ModelServiceRequest;
 
 public interface IModelResourceAdapter
 extends ResourceAdapter, Serializable, WorkListener
@@ -14,6 +15,6 @@ extends ResourceAdapter, Serializable, WorkListener
 {
 	
 	Map<String, Serializable> invokeService(
-			Map<String, Serializable> requestData) throws ModelResourceException;
+			ModelServiceRequest request) throws ModelResourceException;
 
 }

@@ -1,9 +1,6 @@
 package br.eti.claudiney.model.jca.outbound.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -13,8 +10,6 @@ import javax.resource.cci.InteractionSpec;
 import javax.resource.cci.MappedRecord;
 import javax.resource.cci.Record;
 import javax.resource.cci.ResourceWarning;
-
-import org.apache.commons.io.IOUtils;
 
 import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
 import br.eti.claudiney.model.api.ra.outbound.def.IModelConnection;
@@ -46,6 +41,7 @@ public class ModelServiceEngine implements IModelService {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 //	public Record execute(
 	public MappedRecord execute(
 			InteractionSpec spec,
@@ -65,9 +61,12 @@ public class ModelServiceEngine implements IModelService {
 		}
 		
 		Map<String, Serializable> info = connection.delegateExecution(data);
-
+		entries = info.entrySet();
+		
 		ModelServiceResponse response = new ModelServiceResponse();
-		response.put("resourceData", info.get("resourceData"));
+		for(Map.Entry<String, Serializable> entry: entries) {
+			response.put(entry.getKey(), entry.getValue());
+		}
 		
 		return response;
 		

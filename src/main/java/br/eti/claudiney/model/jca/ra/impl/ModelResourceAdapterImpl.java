@@ -17,13 +17,13 @@ import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.ExecutionContext;
 import javax.resource.spi.work.Work;
 import javax.resource.spi.work.WorkEvent;
-import javax.resource.spi.work.WorkException;
 import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
 
 import br.eti.claudiney.model.api.ra.exceptions.ModelResourceException;
 import br.eti.claudiney.model.jca.internal.def.ILogger;
 import br.eti.claudiney.model.jca.internal.factory.ModelLogger;
+import br.eti.claudiney.model.jca.outbound.beans.ModelServiceRequest;
 import br.eti.claudiney.model.jca.outbound.def.IModelWork;
 import br.eti.claudiney.model.jca.ra.def.IModelResourceAdapter;
 import br.eti.claudiney.model.jca.work.impl.ModelWork;
@@ -78,25 +78,27 @@ public class ModelResourceAdapterImpl implements IModelResourceAdapter {
 	//--------------------------------------------------------
 	
 	@Override
-	public Map<String, Serializable> invokeService(Map<String, Serializable> requestData)
+	public Map<String, Serializable> invokeService(ModelServiceRequest request)
 			throws ModelResourceException {
 		
 		logger.info("invokeService(data)");
 		
-		IModelWork work = new ModelWork(requestData);
+		IModelWork work = new ModelWork(request);
 		
 		try {
-			workManager.scheduleWork(work, 50, new ExecutionContext(), this);
-			synchronized(work) {
-				if(!work.jobCompleted()) {
-					logger.info("invokeService(): ### WAITING ###");
-					work.wait(5000);
-				}
-				if( ! work.jobCompleted() ) {
-					throw new ModelResourceException("Work Timeout");
-				}
-			}
-		} catch(WorkException | InterruptedException e) {
+			workManager.doWork(work, WorkManager.IMMEDIATE, new ExecutionContext(), this);
+//			workManager.scheduleWork(work, 100, new ExecutionContext(), this);
+//			synchronized(work) {
+//				if(!work.jobCompleted()) {
+//					logger.info("invokeService(): ### WAITING ###");
+//					work.wait(5000);
+//				}
+//				if( ! work.jobCompleted() ) {
+//					throw new ModelResourceException("Work Timeout");
+//				}
+//			}
+//		} catch(WorkException | InterruptedException e) {
+		} catch(Exception e) {
 			throw new ModelResourceException(e);
 		}
 		
